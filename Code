@@ -1,1 +1,98 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 
+public class PolynomialReconstruction {
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        // Read the number of test cases
+        int numTestCases = scanner.nextInt();
+        scanner.nextLine(); // Consume the newline
+
+        for (int testCase = 1; testCase <= numTestCases; testCase++) {
+            // Read the input data for the current test case
+            int n = scanner.nextInt();
+            int k = scanner.nextInt();
+            scanner.nextLine(); // Consume the newline
+
+            List<Point> points = new ArrayList<>();
+            for (int i = 0; i < n; i++) {
+                String[] line = scanner.nextLine().split(" ");
+                int x = Integer.parseInt(line[0]);
+                int base = Integer.parseInt(line[1]);
+                String value = line[2];
+                int y = decodeValue(value, base);
+                points.add(new Point(x, y));
+            }
+
+            // Reconstruct the polynomial using Lagrange interpolation
+            Polynomial polynomial = reconstructPolynomial(points);
+
+            // Find the constant term (c)
+            int secret = polynomial.evaluate(0);
+
+            // Print the result for the current test case
+            System.out.println("Secret for testcase " + testCase + ": " + secret);
+        }
+    }
+
+    static class Point {
+        int x, y;
+
+        public Point(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    static class Polynomial {
+        int[] coefficients;
+
+        public Polynomial(int degree) {
+            coefficients = new int[degree + 1];
+        }
+
+        public void addTerm(int coefficient, int power) {
+            coefficients[power] = coefficient;
+        }
+
+        public int evaluate(int x) {
+            int result = 0;
+            for (int i = coefficients.length - 1; i >= 0; i--) {
+                result = result * x + coefficients[i];
+            }
+            return result;
+        }
+    }
+
+    static int decodeValue(String value, int base) {
+        int result = 0;
+        for (int i = value.length() - 1; i >= 0; i--) {
+            result = result * base + Character.digit(value.charAt(i), base);
+        }
+        return result;
+    }
+
+    static Polynomial reconstructPolynomial(List<Point> points) {
+        int n = points.size();
+        int degree = n - 1;
+        Polynomial polynomial = new Polynomial(degree);
+
+        for (int i = 0; i <= degree; i++) {
+            int coefficient = 0;
+            for (int j = 0; j < n; j++) {
+                int product = 1;
+                for (int k = 0; k < n; k++) {
+                    if (k != i && k != j) {
+                        product *= (points.get(i).x - points.get(k).x);
+                    }
+                }
+                coefficient += points.get(j).y * product / (points.get(i).x - points.get(j).x);
+            }
+            polynomial.addTerm(coefficient, degree - i);
+        }
+
+        return polynomial;
+    }
+}
